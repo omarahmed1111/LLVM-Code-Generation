@@ -52,5 +52,23 @@ MachineFunction *populateMachineIR(MachineModuleInfo &MMI, Function &Foo,
                                                        /*IsSpillSlot=*/false);
 
   // TODO: Populate MF.
+  auto* bb0 = MF.CreateMachineBasicBlock();
+  auto* bb1 = MF.CreateMachineBasicBlock();
+  auto* bb2 = MF.CreateMachineBasicBlock();
+  
+  MF.push_back(bb0);
+  MF.push_back(bb1);
+  MF.push_back(bb2);
+
+  // successors
+  bb0->addSuccessor(bb1);
+  bb0->addSuccessor(bb2);
+  bb1->addSuccessor(bb2);
+
+  // bb0 instructions
+  MachineIRBuilder bb0MB(*bb0, bb0->end());
+  Register _0 = bb0MB.buildCopy(I32, W0).getReg(0);
+  Register _1 = bb0MB.buildCopy(I32, W1).getReg(0);
+
   return &MF;
 }
