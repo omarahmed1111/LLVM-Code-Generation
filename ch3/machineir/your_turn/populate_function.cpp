@@ -69,6 +69,30 @@ MachineFunction *populateMachineIR(MachineModuleInfo &MMI, Function &Foo,
   MachineIRBuilder bb0MB(*bb0, bb0->end());
   Register _0 = bb0MB.buildCopy(I32, W0).getReg(0);
   Register _1 = bb0MB.buildCopy(I32, W1).getReg(0);
+  Register _2 = bb0MB.buildFrameIndex(VarAddrLLT, FrameIndex).getReg(0);
+  Register _3 = bb0MB.buildAdd(I32, _0, _1).getReg(0);
+  bb0MB.buildStore(_3, _2, PtrInfo, VarStackAlign);
+  Register _4 = bb0MB.buildConstant(I32, 255).getReg(0);
+  Register _5 = bb0MB.buildLoad(I32, _2, PtrInfo, VarStackAlign).getReg(0);
+  Register _6 = bb0MB.buildICmp(CmpInst::ICMP_EQ, I1, _5, _4).getReg(0);
+  bb0MB.buildBrCond(_6, *bb1);
+  bb0MB.buildBr(*bb2);
+  
+  // bb1 instructions
+  MachineIRBuilder bb1MB(*bb1, bb1->end());
+  Register _7 = bb1MB.buildLoad(I32, _2, PtrInfo, VarStackAlign).getReg(0);
+  bb1MB.buildCopy(W0, _7);
+  bb1MB.buildInstr(TargetOpcode::INLINEASM, {}, {}).addExternalSymbol("bl @bar").addImm(0).addReg(W0, RegState::Implicit);
+  bb1MB.buildInstr(TargetOpcode::INLINEASM, {}, {}).addExternalSymbol("bl @baz").addImm(0).addReg(W0, RegState::Implicit | RegState::Define);
+  Register _8 = bb1MB.buildCopy(I32, W0).getReg(0);
+  bb1MB.buildStore(_8, _2, PtrInfo, VarStackAlign);
+
+  // bb2 instructions
+  MachineIRBuilder bb2MB(*bb2, bb2->end());
+  Register _9 = bb2MB.buildLoad(I32, _2, PtrInfo, VarStackAlign).getReg(0);
+  bb2MB.buildCopy(W0, _9);
+  bb2MB.buildInstr(TargetOpcode::INLINEASM, {}, {}).addExternalSymbol("bl @bar").addImm(0).addReg(W0, RegState::Implicit);
+  bb2MB.buildInstr(TargetOpcode::INLINEASM, {}, {}).addExternalSymbol("ret").addImm(0);
 
   return &MF;
 }
