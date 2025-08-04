@@ -15,6 +15,8 @@ using namespace llvm;
 // \returns true if \p Foo was modified (i.e., something had been constant
 // propagated), false otherwise.
 bool myConstantPropagation(Function &Foo) {
+  SmallVector<Instruction*> ToDelete(8);
+
   for (auto& BB : Foo) {
     for (auto& I : BB) {
       if (auto* shlI = dyn_cast<ShlOperator>(&I)) {
@@ -25,12 +27,39 @@ bool myConstantPropagation(Function &Foo) {
 
         if (ConstOne && ConstTwo) {
           APInt NewConst = ConstOne->getValue() << ConstTwo->getValue();
-          outs() << "\n\n\n\n\n\n\n\n" << NewConst << "\n\n\n\n\n\n";
+          shlI->replaceAllUsesWith(ConstantInt::get(Foo.getContext(), NewConst));
         }
+        ToDelete.push_back(&I);
+      } else if (auto* binary = dyn_cast<BinaryOperator>(&I)) {
+        if (binary->getOpcode() == Instruction::UDiv) {
+          Value* OperandOne = binary->getOperand(0);
+          Value* OperandTwo = binary->getOperand(1);
+          auto* ConstOne = dyn_cast<ConstantInt>(OperandOne);
+          auto* ConstTwo = dyn_cast<ConstantInt>(OperandTwo);
 
-        // outs() << "\n\n\n\n\n\n\n\n" << ConstOne->getValue() << "\n\n\n\n\n\n";
+          if (ConstOne && ConstTwo) {
+            APInt NewConst = ConstOne->getValue().udiv(ConstTwo->getValue());
+            binary->replaceAllUsesWith(ConstantInt::get(Foo.getContext(), NewConst));
+          }
+          ToDelete.push_back(&I);
+        } else if (binary->getOpcode() == Instruction::Or) {
+          Value* OperandOne = binary->getOperand(0);
+          Value* OperandTwo = binary->getOperand(1);
+          auto* ConstOne = dyn_cast<ConstantInt>(OperandOne);
+          auto* ConstTwo = dyn_cast<ConstantInt>(OperandTwo);
+
+          if (ConstOne && ConstTwo) {
+            APInt NewConst = ConstOne->getValue() | ConstTwo->getValue();
+            binary->replaceAllUsesWith(ConstantInt::get(Foo.getContext(), NewConst));
+          }
+          ToDelete.push_back(&I);
+        }
       }
     }
   }
-  return false;
+
+  // for (auto* I : ToDelete) {
+  //   I->removeFromParent();
+  // }
+  return true;
 }
