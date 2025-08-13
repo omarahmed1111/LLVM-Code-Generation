@@ -15,7 +15,7 @@ using namespace llvm;
 // \returns true if \p Foo was modified (i.e., something had been constant
 // propagated), false otherwise.
 bool myConstantPropagation(Function &Foo) {
-  SmallVector<Instruction*> ToDelete(8);
+  SmallVector<Instruction*, 8> ToDelete(0);
 
   for (auto& BB : Foo) {
     for (auto& I : BB) {
@@ -28,8 +28,8 @@ bool myConstantPropagation(Function &Foo) {
         if (ConstOne && ConstTwo) {
           APInt NewConst = ConstOne->getValue() << ConstTwo->getValue();
           shlI->replaceAllUsesWith(ConstantInt::get(Foo.getContext(), NewConst));
+          ToDelete.push_back(&I);
         }
-        ToDelete.push_back(&I);
       } else if (auto* binary = dyn_cast<BinaryOperator>(&I)) {
         if (binary->getOpcode() == Instruction::UDiv) {
           Value* OperandOne = binary->getOperand(0);
@@ -40,8 +40,8 @@ bool myConstantPropagation(Function &Foo) {
           if (ConstOne && ConstTwo) {
             APInt NewConst = ConstOne->getValue().udiv(ConstTwo->getValue());
             binary->replaceAllUsesWith(ConstantInt::get(Foo.getContext(), NewConst));
+            ToDelete.push_back(&I);
           }
-          ToDelete.push_back(&I);
         } else if (binary->getOpcode() == Instruction::Or) {
           Value* OperandOne = binary->getOperand(0);
           Value* OperandTwo = binary->getOperand(1);
@@ -51,15 +51,15 @@ bool myConstantPropagation(Function &Foo) {
           if (ConstOne && ConstTwo) {
             APInt NewConst = ConstOne->getValue() | ConstTwo->getValue();
             binary->replaceAllUsesWith(ConstantInt::get(Foo.getContext(), NewConst));
+            ToDelete.push_back(&I);
           }
-          ToDelete.push_back(&I);
         }
       }
     }
   }
 
-  // for (auto* I : ToDelete) {
-  //   I->removeFromParent();
-  // }
-  return true;
+  for (auto* I : ToDelete) {
+    I->eraseFromParent();
+  }
+  return !ToDelete.empty();
 }
