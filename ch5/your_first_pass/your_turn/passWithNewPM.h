@@ -6,10 +6,12 @@ namespace llvm {
 class Function;
 };
 
-class YourTurnConstantPropagationNewPass /* TODO: Fill in the blanks*/ {
+class YourTurnConstantPropagationNewPass : public llvm::PassInfoMixin<YourTurnConstantPropagationNewPass> {
 public:
+    friend PassInfoMixin<YourTurnConstantPropagationNewPass>;
+    llvm::PreservedAnalyses run(llvm::Function &F, llvm::FunctionAnalysisManager &FAM);
 };
 
 /* TODO: Change this into 1 when you're ready to try */
-#define YOUR_TURN_IS_READY 0
+#define YOUR_TURN_IS_READY 1
 #endif
