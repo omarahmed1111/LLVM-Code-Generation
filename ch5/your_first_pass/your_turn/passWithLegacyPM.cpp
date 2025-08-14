@@ -13,17 +13,25 @@ void initializeYourTurnConstantPropagationPass(PassRegistry &);
 };
 
 namespace {
-class YourTurnConstantPropagation /* TODO: Fill in the blanks */ {
+class YourTurnConstantPropagation : public FunctionPass {
 public:
-  YourTurnConstantPropagation() /* TODO: Fill in the blanks */ {}
+  static char ID;
 
-  // TODO: Fill in the blanks.
+  YourTurnConstantPropagation() : FunctionPass(ID) {
+    llvm::initializeYourTurnConstantPropagationPass(*PassRegistry::getPassRegistry());
+  }
+
+  bool runOnFunction(Function &F) override { return solutionConstantPropagation(F); }
 };
+
+char YourTurnConstantPropagation::ID = 0;
+
 } // End anonymous namespace.
 
+INITIALIZE_PASS(YourTurnConstantPropagation, "your-turn-constant-propagation", "My wonderful pass", false, false);
 // TODO: Remove and add proper implementation
-void llvm::initializeYourTurnConstantPropagationPass(PassRegistry &) {}
+// void llvm::initializeYourTurnConstantPropagationPass(PassRegistry &) {}
 
 Pass *createYourTurnPassForLegacyPM() {
-  return nullptr; // TODO: Fill in the blanks.
+  return new YourTurnConstantPropagation();
 }
